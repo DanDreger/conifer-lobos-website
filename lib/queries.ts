@@ -1,0 +1,11 @@
+export const upcomingEventsQuery = `*[_type == "event" && date >= $now] | order(date asc)[0...5]`;
+export const allEventsQuery = `*[_type == "event"] | order(date asc)`;
+export const latestNewsQuery = `*[_type == "news" && isActive == true] | order(publishedAt desc)[0...3]`;
+export const allNewsQuery = `*[_type == "news" && isActive == true] | order(publishedAt desc)`;
+export const playersQuery = `*[_type == "player" && isActive == true] | order(jerseyNumber asc)`;
+export const coachesQuery = `*[_type == "coach"] | order(order asc)`;
+export const boardMembersQuery = `*[_type == "boardMember" && isCurrent == true]`;
+export const gamesQuery = `*[_type == "game"] | order(date asc)`;
+export const meetingMinutesQuery = `*[_type == "meetingMinutes"] | order(date desc)`;
+export const sponsorsQuery = `*[_type == "sponsor" && isActive == true] | order(tier asc)`;
+export const faqsQuery = `*[_type == "faq"] | order(order asc)`;

@@ -1,27 +1,25 @@
+@import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Barlow+Condensed:wght@700;800&family=Lalezar&family=Barlow:wght@400;500;600&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --forest-green: #1b5e20;
+  --light-green: #c8efca;
+  --near-black: #111111;
+  --cream: #f5f0e4;
+  --dark-grey: #4a4a4a;
+  --mid-grey: #9e9e9e;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  scroll-padding-top: 56px;
 }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
-}
-
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
-  }
+  color: #4a4a4a;
+  font-family: "Barlow", sans-serif;
+  font-size: 15px;
+  line-height: 1.7;
 }

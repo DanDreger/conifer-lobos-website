@@ -9,8 +9,18 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        background: "var(--background)",
-        foreground: "var(--foreground)",
+        "forest-green": "#1B5E20",
+        "light-green": "#C8EFCA",
+        "near-black": "#111111",
+        cream: "#F5F0E4",
+        "dark-grey": "#4A4A4A",
+        "mid-grey": "#9E9E9E",
+      },
+      fontFamily: {
+        dancing: ["Dancing Script", "cursive"],
+        "barlow-condensed": ["Barlow Condensed", "sans-serif"],
+        lalezar: ["Lalezar", "sans-serif"],
+        barlow: ["Barlow", "sans-serif"],
       },
     },
   },
