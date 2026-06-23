@@ -1,4 +1,5 @@
 export const upcomingEventsQuery = `*[_type == "event" && date >= $now] | order(date asc)[0...5]`;
+export const allUpcomingEventsQuery = `*[_type == "event" && date >= $now] | order(date asc)`;
 export const allEventsQuery = `*[_type == "event"] | order(date asc)`;
 export const latestNewsQuery = `*[_type == "news" && isActive == true] | order(publishedAt desc)[0...3]`;
 export const allNewsQuery = `*[_type == "news" && isActive == true] | order(publishedAt desc)`;
