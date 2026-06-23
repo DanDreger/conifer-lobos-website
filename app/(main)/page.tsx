@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { client } from "@/lib/sanity";
+import { client, urlFor } from "@/lib/sanity";
 import { allUpcomingEventsQuery, allNewsQuery } from "@/lib/queries";
 import WhatsGoingOnSlider, {
   type SliderSlide,
@@ -33,6 +33,10 @@ function buildSlides(news: any[], events: any[]): SliderSlide[] {
         type: "NEWS",
         title: news[i].title,
         date: news[i].publishedAt,
+        imageUrl: news[i].image
+          ? urlFor(news[i].image).width(800).height(400).fit("crop").url()
+          : undefined,
+        imageAlt: news[i].image?.alt,
       });
     }
     if (events[i]) {
@@ -42,6 +46,10 @@ function buildSlides(news: any[], events: any[]): SliderSlide[] {
         title: events[i].title,
         date: events[i].date,
         description: events[i].description,
+        imageUrl: events[i].image
+          ? urlFor(events[i].image).width(800).height(400).fit("crop").url()
+          : undefined,
+        imageAlt: events[i].image?.alt,
       });
     }
   }

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 
 export type SliderSlide = {
@@ -8,6 +9,8 @@ export type SliderSlide = {
   title: string;
   date: string;
   description?: string;
+  imageUrl?: string;
+  imageAlt?: string;
 };
 
 function formatDate(dateStr: string) {
@@ -48,7 +51,7 @@ export default function WhatsGoingOnSlider({
         setCurrent((c) => (c + 1) % slides.length);
         setVisible(true);
       }, 180);
-    }, 3000);
+    }, 3500);
     return () => clearInterval(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [paused, slides.length, resetKeyRef.current]);
@@ -71,27 +74,47 @@ export default function WhatsGoingOnSlider({
           What&apos;s Going On
         </h2>
 
-        {/* Slide card */}
+        {/* Slide card — split into top/image/bottom so image is full-bleed */}
         <div
-          className="border border-[#1B5E20]/60 rounded-xl p-8 md:p-10 min-h-[180px] transition-opacity duration-150"
+          className="border border-[#1B5E20]/60 rounded-xl overflow-hidden transition-opacity duration-150"
           style={{ opacity: visible ? 1 : 0 }}
         >
-          <span className="inline-block font-barlow font-semibold uppercase text-[11px] tracking-[0.1em] text-[#C8EFCA] bg-[#1B5E20]/30 px-2 py-0.5 rounded mb-4">
-            {slide.type}
-          </span>
-          <h3 className="font-barlow-condensed font-bold uppercase text-white text-2xl md:text-3xl leading-tight mb-2">
-            {slide.title}
-          </h3>
-          <p className="font-barlow text-[#9E9E9E] text-xs mb-3">
-            {formatDate(slide.date)}
-          </p>
-          {slide.description && (
-            <p className="font-barlow text-white/65 text-sm leading-relaxed max-w-xl">
-              {slide.description.length > 180
-                ? slide.description.slice(0, 180).trimEnd() + "…"
-                : slide.description}
-            </p>
+          {/* Top: badge + title */}
+          <div className="px-8 md:px-10 pt-8 md:pt-10 pb-4">
+            <span className="inline-block font-barlow font-semibold uppercase text-[11px] tracking-[0.1em] text-[#C8EFCA] bg-[#1B5E20]/30 px-2 py-0.5 rounded mb-4">
+              {slide.type}
+            </span>
+            <h3 className="font-barlow-condensed font-bold uppercase text-white text-2xl md:text-3xl leading-tight">
+              {slide.title}
+            </h3>
+          </div>
+
+          {/* Image — full width, 200px tall, only rendered when present */}
+          {slide.imageUrl && (
+            <div className="relative w-full h-[200px]">
+              <Image
+                src={slide.imageUrl}
+                alt={slide.imageAlt || slide.title}
+                fill
+                unoptimized
+                className="object-cover"
+              />
+            </div>
           )}
+
+          {/* Bottom: date + description */}
+          <div className="px-8 md:px-10 pt-4 pb-8 md:pb-10">
+            <p className="font-barlow text-[#9E9E9E] text-xs mb-3">
+              {formatDate(slide.date)}
+            </p>
+            {slide.description && (
+              <p className="font-barlow text-white/65 text-sm leading-relaxed max-w-xl">
+                {slide.description.length > 180
+                  ? slide.description.slice(0, 180).trimEnd() + "…"
+                  : slide.description}
+              </p>
+            )}
+          </div>
         </div>
 
         {/* Controls: prev · dots · next */}
