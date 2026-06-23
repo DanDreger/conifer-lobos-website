@@ -1,5 +1,6 @@
+import Image from "next/image";
 import type { Metadata } from "next";
-import { client } from "@/lib/sanity";
+import { client, urlFor } from "@/lib/sanity";
 import { gamesQuery, allEventsQuery } from "@/lib/queries";
 
 export const metadata: Metadata = { title: "Schedule & Events | Conifer Lobos Baseball" };
@@ -144,34 +145,47 @@ export default async function SchedulePage() {
               {upcomingEvents.map((event: any) => (
                 <div
                   key={event._id}
-                  className="bg-white border border-[#e0d8c8] rounded-xl p-6"
+                  className="bg-white border border-[#e0d8c8] rounded-xl overflow-hidden"
                 >
-                  <p className="font-barlow-condensed font-bold text-[#1B5E20] text-lg uppercase">
-                    {formatEventDate(event.date)}
-                  </p>
-                  <p className="font-barlow font-semibold text-[#111111] mt-1">
-                    {event.title}
-                  </p>
-                  {event.location && (
-                    <p className="font-barlow text-[#9E9E9E] text-sm mt-1">
-                      {event.location}
+                  {event.image && (
+                    <div className="relative w-full h-[200px]">
+                      <Image
+                        src={urlFor(event.image).width(600).height(400).fit("crop").url()}
+                        alt={event.image.alt || event.title}
+                        fill
+                        unoptimized
+                        className="object-cover object-top"
+                      />
+                    </div>
+                  )}
+                  <div className="p-6">
+                    <p className="font-barlow-condensed font-bold text-[#1B5E20] text-lg uppercase">
+                      {formatEventDate(event.date)}
                     </p>
-                  )}
-                  {event.description && (
-                    <p className="font-barlow text-[#4A4A4A] text-sm mt-2 leading-relaxed">
-                      {event.description}
+                    <p className="font-barlow font-semibold text-[#111111] mt-1">
+                      {event.title}
                     </p>
-                  )}
-                  {event.link && (
-                    <a
-                      href={event.link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-block mt-3 text-sm font-barlow font-semibold uppercase text-[#1B5E20] hover:underline"
-                    >
-                      Details →
-                    </a>
-                  )}
+                    {event.location && (
+                      <p className="font-barlow text-[#9E9E9E] text-sm mt-1">
+                        {event.location}
+                      </p>
+                    )}
+                    {event.description && (
+                      <p className="font-barlow text-[#4A4A4A] text-sm mt-2 leading-relaxed">
+                        {event.description}
+                      </p>
+                    )}
+                    {event.link && (
+                      <a
+                        href={event.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-block mt-3 text-sm font-barlow font-semibold uppercase text-[#1B5E20] hover:underline"
+                      >
+                        Details →
+                      </a>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>

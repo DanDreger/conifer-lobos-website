@@ -121,34 +121,47 @@ export default async function HomePage() {
               {events.map((event: any) => (
                 <div
                   key={event._id}
-                  className="bg-white border border-[#e0e0e0] rounded-xl p-6"
+                  className="bg-white border border-[#e0e0e0] rounded-xl overflow-hidden"
                 >
-                  <p className="font-barlow-condensed font-bold text-[#1B5E20] text-lg uppercase leading-none mb-1">
-                    {formatDate(event.date)}
-                  </p>
-                  <h3 className="font-barlow font-semibold text-[#111111] text-sm leading-snug mt-2">
-                    {event.title}
-                  </h3>
-                  {event.location && (
-                    <p className="font-barlow text-[#9E9E9E] text-xs mt-1">
-                      {event.location}
+                  {event.image && (
+                    <div className="relative w-full h-[200px]">
+                      <Image
+                        src={urlFor(event.image).width(600).height(400).fit("crop").url()}
+                        alt={event.image.alt || event.title}
+                        fill
+                        unoptimized
+                        className="object-cover object-top"
+                      />
+                    </div>
+                  )}
+                  <div className="p-6">
+                    <p className="font-barlow-condensed font-bold text-[#1B5E20] text-lg uppercase leading-none mb-1">
+                      {formatDate(event.date)}
                     </p>
-                  )}
-                  {event.description && (
-                    <p className="font-barlow text-[#4A4A4A] text-sm mt-2 leading-relaxed">
-                      {event.description}
-                    </p>
-                  )}
-                  {event.link && (
-                    <a
-                      href={event.link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-block mt-3 text-xs font-barlow font-semibold uppercase text-[#1B5E20] hover:underline"
-                    >
-                      Details →
-                    </a>
-                  )}
+                    <h3 className="font-barlow font-semibold text-[#111111] text-sm leading-snug mt-2">
+                      {event.title}
+                    </h3>
+                    {event.location && (
+                      <p className="font-barlow text-[#9E9E9E] text-xs mt-1">
+                        {event.location}
+                      </p>
+                    )}
+                    {event.description && (
+                      <p className="font-barlow text-[#4A4A4A] text-sm mt-2 leading-relaxed">
+                        {event.description}
+                      </p>
+                    )}
+                    {event.link && (
+                      <a
+                        href={event.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-block mt-3 text-xs font-barlow font-semibold uppercase text-[#1B5E20] hover:underline"
+                      >
+                        Details →
+                      </a>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
@@ -174,14 +187,27 @@ export default async function HomePage() {
               {news.map((item: any) => (
                 <div
                   key={item._id}
-                  className="bg-white border border-[#e0d8c8] rounded-xl p-6"
+                  className="bg-white border border-[#e0d8c8] rounded-xl overflow-hidden"
                 >
-                  <p className="font-barlow font-semibold uppercase text-[11px] tracking-[0.1em] text-[#9E9E9E] mb-2">
-                    {formatDate(item.publishedAt)}
-                  </p>
-                  <h3 className="font-barlow font-semibold text-[#111111] text-base leading-snug">
-                    {item.title}
-                  </h3>
+                  {item.image && (
+                    <div className="relative w-full h-[200px]">
+                      <Image
+                        src={urlFor(item.image).width(600).height(400).fit("crop").url()}
+                        alt={item.image.alt || item.title}
+                        fill
+                        unoptimized
+                        className="object-cover object-top"
+                      />
+                    </div>
+                  )}
+                  <div className="p-6">
+                    <p className="font-barlow font-semibold uppercase text-[11px] tracking-[0.1em] text-[#9E9E9E] mb-2">
+                      {formatDate(item.publishedAt)}
+                    </p>
+                    <h3 className="font-barlow font-semibold text-[#111111] text-base leading-snug">
+                      {item.title}
+                    </h3>
+                  </div>
                 </div>
               ))}
             </div>
