@@ -21,6 +21,49 @@ function formatDate(dateStr: string) {
   });
 }
 
+function SlideCard({ slide }: { slide: SliderSlide }) {
+  return (
+    <div className="flex-1 min-w-0 border border-[#1B5E20]/60 rounded-xl overflow-hidden">
+      {/* Badge + title */}
+      <div className="px-5 md:px-6 pt-6 pb-3">
+        <span className="inline-block font-barlow font-semibold uppercase text-[11px] tracking-[0.1em] text-[#C8EFCA] bg-[#1B5E20]/30 px-2 py-0.5 rounded mb-3">
+          {slide.type}
+        </span>
+        <h3 className="font-barlow-condensed font-bold uppercase text-white text-xl md:text-2xl leading-tight line-clamp-2">
+          {slide.title}
+        </h3>
+      </div>
+
+      {/* Image — 16:9 aspect ratio, only when present */}
+      {slide.imageUrl && (
+        <div className="relative w-full aspect-video">
+          <Image
+            src={slide.imageUrl}
+            alt={slide.imageAlt || slide.title}
+            fill
+            unoptimized
+            className="object-cover object-top"
+          />
+        </div>
+      )}
+
+      {/* Date + description */}
+      <div className="px-5 md:px-6 pt-3 pb-6">
+        <p className="font-barlow text-[#9E9E9E] text-xs mb-2">
+          {formatDate(slide.date)}
+        </p>
+        {slide.description && (
+          <p className="font-barlow text-white/65 text-sm leading-relaxed">
+            {slide.description.length > 150
+              ? slide.description.slice(0, 150).trimEnd() + "…"
+              : slide.description}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function WhatsGoingOnSlider({
   slides,
 }: {
@@ -29,36 +72,55 @@ export default function WhatsGoingOnSlider({
   const [current, setCurrent] = useState(0);
   const [paused, setPaused] = useState(false);
   const [visible, setVisible] = useState(true);
+  // Start false to avoid hydration mismatch — flips to true client-side
+  const [isDesktop, setIsDesktop] = useState(false);
   const resetKeyRef = useRef(0);
 
-  const goTo = (index: number) => {
+  useEffect(() => {
+    const check = () => setIsDesktop(window.innerWidth >= 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
+  const step = isDesktop && slides.length >= 2 ? 2 : 1;
+  const numPages = Math.ceil(slides.length / step);
+  const currentPage = Math.floor(current / step);
+
+  const goToPage = (pageIndex: number) => {
     resetKeyRef.current += 1;
     setVisible(false);
     setTimeout(() => {
-      setCurrent(index);
+      setCurrent(pageIndex * step);
       setVisible(true);
     }, 180);
   };
 
-  const prev = () => goTo((current - 1 + slides.length) % slides.length);
-  const next = () => goTo((current + 1) % slides.length);
+  const prev = () => goToPage((currentPage - 1 + numPages) % numPages);
+  const next = () => goToPage((currentPage + 1) % numPages);
 
   useEffect(() => {
-    if (paused || slides.length <= 1) return;
+    if (paused || numPages <= 1) return;
     const t = setInterval(() => {
       setVisible(false);
       setTimeout(() => {
-        setCurrent((c) => (c + 1) % slides.length);
+        setCurrent((c) => {
+          const page = Math.floor(c / step);
+          return ((page + 1) % numPages) * step;
+        });
         setVisible(true);
       }, 180);
     }, 3500);
     return () => clearInterval(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [paused, slides.length, resetKeyRef.current]);
+  }, [paused, numPages, step, resetKeyRef.current]);
 
   if (!slides.length) return null;
 
-  const slide = slides[current];
+  const visibleSlides = Array.from(
+    { length: step },
+    (_, i) => slides[(current + i) % slides.length]
+  );
 
   return (
     <section
@@ -66,7 +128,7 @@ export default function WhatsGoingOnSlider({
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
-      <div className="max-w-4xl mx-auto px-4">
+      <div className="max-w-6xl mx-auto px-4">
         <p className="font-barlow font-semibold uppercase text-[11px] tracking-[0.1em] text-[#9E9E9E] mb-2">
           Latest
         </p>
@@ -74,55 +136,22 @@ export default function WhatsGoingOnSlider({
           What&apos;s Going On
         </h2>
 
-        {/* Slide card — split into top/image/bottom so image is full-bleed */}
+        {/* Slide area — flex row; 1 card mobile, 2 cards desktop */}
         <div
-          className="border border-[#1B5E20]/60 rounded-xl overflow-hidden transition-opacity duration-150"
+          className="flex gap-6 transition-opacity duration-150"
           style={{ opacity: visible ? 1 : 0 }}
         >
-          {/* Top: badge + title */}
-          <div className="px-8 md:px-10 pt-8 md:pt-10 pb-4">
-            <span className="inline-block font-barlow font-semibold uppercase text-[11px] tracking-[0.1em] text-[#C8EFCA] bg-[#1B5E20]/30 px-2 py-0.5 rounded mb-4">
-              {slide.type}
-            </span>
-            <h3 className="font-barlow-condensed font-bold uppercase text-white text-2xl md:text-3xl leading-tight">
-              {slide.title}
-            </h3>
-          </div>
-
-          {/* Image — full width, 200px tall, only rendered when present */}
-          {slide.imageUrl && (
-            <div className="relative w-full h-[200px]">
-              <Image
-                src={slide.imageUrl}
-                alt={slide.imageAlt || slide.title}
-                fill
-                unoptimized
-                className="object-cover"
-              />
-            </div>
-          )}
-
-          {/* Bottom: date + description */}
-          <div className="px-8 md:px-10 pt-4 pb-8 md:pb-10">
-            <p className="font-barlow text-[#9E9E9E] text-xs mb-3">
-              {formatDate(slide.date)}
-            </p>
-            {slide.description && (
-              <p className="font-barlow text-white/65 text-sm leading-relaxed max-w-xl">
-                {slide.description.length > 180
-                  ? slide.description.slice(0, 180).trimEnd() + "…"
-                  : slide.description}
-              </p>
-            )}
-          </div>
+          {visibleSlides.map((slide, i) => (
+            <SlideCard key={`${slide._id}-${i}`} slide={slide} />
+          ))}
         </div>
 
-        {/* Controls: prev · dots · next */}
-        {slides.length > 1 && (
+        {/* Controls: prev · page dots · next */}
+        {numPages > 1 && (
           <div className="flex items-center justify-center gap-4 mt-6">
             <button
               onClick={prev}
-              aria-label="Previous slide"
+              aria-label="Previous"
               className="w-8 h-8 rounded-full border border-white/20 hover:border-white/60 text-white/60 hover:text-white flex items-center justify-center transition-colors"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -130,13 +159,13 @@ export default function WhatsGoingOnSlider({
               </svg>
             </button>
 
-            {slides.map((_, i) => (
+            {Array.from({ length: numPages }, (_, i) => (
               <button
                 key={i}
-                onClick={() => goTo(i)}
-                aria-label={`Go to slide ${i + 1}`}
+                onClick={() => goToPage(i)}
+                aria-label={`Page ${i + 1}`}
                 className={`rounded-full transition-all duration-200 ${
-                  i === current
+                  i === currentPage
                     ? "w-3 h-3 bg-[#C8EFCA]"
                     : "w-2 h-2 bg-white/25 hover:bg-white/50"
                 }`}
@@ -145,7 +174,7 @@ export default function WhatsGoingOnSlider({
 
             <button
               onClick={next}
-              aria-label="Next slide"
+              aria-label="Next"
               className="w-8 h-8 rounded-full border border-white/20 hover:border-white/60 text-white/60 hover:text-white flex items-center justify-center transition-colors"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
