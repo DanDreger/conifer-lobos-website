@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 export type SliderSlide = {
   _id: string;
@@ -23,7 +23,7 @@ function formatDate(dateStr: string) {
 
 function SlideCard({ slide }: { slide: SliderSlide }) {
   return (
-    <div className="flex-1 min-w-0 border border-[#1B5E20]/60 rounded-xl overflow-hidden">
+    <div className="border border-[#1B5E20]/60 rounded-xl overflow-hidden h-full">
       {/* Badge + title */}
       <div className="px-5 md:px-6 pt-6 pb-3">
         <span className="inline-block font-barlow font-semibold uppercase text-[11px] tracking-[0.1em] text-[#C8EFCA] bg-[#1B5E20]/30 px-2 py-0.5 rounded mb-3">
@@ -34,7 +34,7 @@ function SlideCard({ slide }: { slide: SliderSlide }) {
         </h3>
       </div>
 
-      {/* Image — 16:9 aspect ratio, only when present */}
+      {/* Image — 16:9, only when present */}
       {slide.imageUrl && (
         <div className="relative w-full aspect-video">
           <Image
@@ -53,10 +53,11 @@ function SlideCard({ slide }: { slide: SliderSlide }) {
           {formatDate(slide.date)}
         </p>
         {slide.description && (
-          <p className="font-barlow text-white/65 text-sm leading-relaxed">
-            {slide.description.length > 150
-              ? slide.description.slice(0, 150).trimEnd() + "…"
-              : slide.description}
+          <p
+            className="font-barlow leading-relaxed line-clamp-3"
+            style={{ color: "rgba(255,255,255,0.7)", fontSize: "14px" }}
+          >
+            {slide.description}
           </p>
         )}
       </div>
@@ -69,13 +70,13 @@ export default function WhatsGoingOnSlider({
 }: {
   slides: SliderSlide[];
 }) {
-  const [current, setCurrent] = useState(0);
+  const [currentPage, setCurrentPage] = useState(0);
   const [paused, setPaused] = useState(false);
-  const [visible, setVisible] = useState(true);
-  // Start false to avoid hydration mismatch — flips to true client-side
   const [isDesktop, setIsDesktop] = useState(false);
-  const resetKeyRef = useRef(0);
+  // Suppress animation on initial mount and on breakpoint switches
+  const [shouldAnimate, setShouldAnimate] = useState(false);
 
+  // Detect viewport — starts false so SSR/hydration renders 1-up without mismatch
   useEffect(() => {
     const check = () => setIsDesktop(window.innerWidth >= 768);
     check();
@@ -85,42 +86,42 @@ export default function WhatsGoingOnSlider({
 
   const step = isDesktop && slides.length >= 2 ? 2 : 1;
   const numPages = Math.ceil(slides.length / step);
-  const currentPage = Math.floor(current / step);
+
+  // Reset to page 0 without animation when the step (breakpoint) changes
+  useEffect(() => {
+    setShouldAnimate(false);
+    setCurrentPage(0);
+  }, [step]);
 
   const goToPage = (pageIndex: number) => {
-    resetKeyRef.current += 1;
-    setVisible(false);
-    setTimeout(() => {
-      setCurrent(pageIndex * step);
-      setVisible(true);
-    }, 180);
+    setShouldAnimate(true);
+    setCurrentPage(pageIndex);
   };
 
   const prev = () => goToPage((currentPage - 1 + numPages) % numPages);
   const next = () => goToPage((currentPage + 1) % numPages);
 
+  // Auto-advance — currentPage in deps resets the timer on every navigation,
+  // giving a clean 3500ms gap after each manual or auto advance.
   useEffect(() => {
     if (paused || numPages <= 1) return;
     const t = setInterval(() => {
-      setVisible(false);
-      setTimeout(() => {
-        setCurrent((c) => {
-          const page = Math.floor(c / step);
-          return ((page + 1) % numPages) * step;
-        });
-        setVisible(true);
-      }, 180);
+      setShouldAnimate(true);
+      setCurrentPage((p) => (p + 1) % numPages);
     }, 3500);
     return () => clearInterval(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [paused, numPages, step, resetKeyRef.current]);
+  }, [paused, numPages, currentPage]);
 
   if (!slides.length) return null;
 
-  const visibleSlides = Array.from(
-    { length: step },
-    (_, i) => slides[(current + i) % slides.length]
-  );
+  // Track geometry:
+  //   - Track width  = numPages × 100% of container
+  //   - Each slide   = (1 / slides.length) × trackWidth = 100/step % of container
+  //   - TranslateX   = -(currentPage × 100/numPages)% of track
+  //                  = -(currentPage × containerWidth), i.e. one page per 100% shift
+  const trackWidthPct = numPages * 100;
+  const slideWidthPct = 100 / slides.length;
+  const translatePct = currentPage * (100 / numPages);
 
   return (
     <section
@@ -136,14 +137,29 @@ export default function WhatsGoingOnSlider({
           What&apos;s Going On
         </h2>
 
-        {/* Slide area — flex row; 1 card mobile, 2 cards desktop */}
-        <div
-          className="flex gap-6 transition-opacity duration-150"
-          style={{ opacity: visible ? 1 : 0 }}
-        >
-          {visibleSlides.map((slide, i) => (
-            <SlideCard key={`${slide._id}-${i}`} slide={slide} />
-          ))}
+        {/* Viewport — clips slides that are off-screen during transition */}
+        <div className="overflow-hidden">
+          {/* Track — all slides in one flex row; translateX drives the animation */}
+          <div
+            className="flex"
+            style={{
+              width: `${trackWidthPct}%`,
+              transform: `translateX(-${translatePct}%)`,
+              transition: shouldAnimate
+                ? "transform 400ms ease-in-out"
+                : "none",
+            }}
+          >
+            {slides.map((slide) => (
+              <div
+                key={slide._id}
+                className="flex-shrink-0 px-3"
+                style={{ width: `${slideWidthPct}%` }}
+              >
+                <SlideCard slide={slide} />
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Controls: prev · page dots · next */}
@@ -154,8 +170,18 @@ export default function WhatsGoingOnSlider({
               aria-label="Previous"
               className="w-8 h-8 rounded-full border border-white/20 hover:border-white/60 text-white/60 hover:text-white flex items-center justify-center transition-colors"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15 19l-7-7 7-7"
+                />
               </svg>
             </button>
 
@@ -177,8 +203,18 @@ export default function WhatsGoingOnSlider({
               aria-label="Next"
               className="w-8 h-8 rounded-full border border-white/20 hover:border-white/60 text-white/60 hover:text-white flex items-center justify-center transition-colors"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 5l7 7-7 7"
+                />
               </svg>
             </button>
           </div>

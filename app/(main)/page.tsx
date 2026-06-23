@@ -23,6 +23,19 @@ async function getData() {
   return { events, news };
 }
 
+// Extract plain text from the first Portable Text block
+function extractExcerpt(body: any[]): string | undefined {
+  if (!Array.isArray(body) || !body.length) return undefined;
+  const firstBlock = body.find((b: any) => b._type === "block");
+  if (!firstBlock) return undefined;
+  const text = (firstBlock.children ?? [])
+    .filter((c: any) => c._type === "span")
+    .map((c: any) => c.text ?? "")
+    .join("")
+    .trim();
+  return text || undefined;
+}
+
 function buildSlides(news: any[], events: any[]): SliderSlide[] {
   const slides: SliderSlide[] = [];
   const len = Math.min(2, Math.max(news.length, events.length));
@@ -33,6 +46,7 @@ function buildSlides(news: any[], events: any[]): SliderSlide[] {
         type: "NEWS",
         title: news[i].title,
         date: news[i].publishedAt,
+        description: extractExcerpt(news[i].body),
         imageUrl: news[i].image
           ? urlFor(news[i].image).width(800).height(400).fit("crop").url()
           : undefined,
